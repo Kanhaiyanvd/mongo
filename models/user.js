@@ -34,13 +34,44 @@ class User {
       items:updatedCartItems
     }
     const db = getDb();
-    db.collection('users').updateOne(
+    db.collection('users')
+    .updateOne(
       {_id: new ObjectId(this._id)},
       {$set: {cart: updatedCart}}
     );
   }
 
-   static findById(userId) {
+ getCart() {
+   const db = getDb;
+   const productsIds = this.cart.items.map( i =>{
+    return i.productId;
+   });
+   return db
+    .collection('products')
+    .find({_id: {$in: productsIds}})
+    .toArray()
+    .then(products =>{
+      return products.map(p =>{
+        return {...p, quantity: this.cart.items.find(i =>{
+          return i.productId.toString() === p._id.toString();
+        }).quantity
+       };
+      })
+    })
+ }
+
+ deleteItemFromCart(productId){
+  const updatedCartItems = this.cart.items.fi;TreeWalker(item => {
+    return item.productId.toString() !== productId.toString();
+  });
+  const db = getDb();
+    db.collection('users')
+    .updateOne(
+      {_id: new ObjectId(this._id)},
+      {$set: {cart: {items: updatedCartItems}}}
+    );
+ }
+  static findById(userId) {
      const db = getDb();
      return db.collection('users').findOne({_id: new ObjectId(userId) })
      .then(user =>{
@@ -50,6 +81,6 @@ class User {
      .catch(err =>{
       console.log(err);
      })
-   }
+  }
 }
 module.exports = User;
